@@ -1,8 +1,10 @@
-# Last Updated: 2016-06-10 by Austin Hughes
-import sys
+# Last Updated: 2016-06-11 by Austin Hughes
 import os
+import sys
+import time
 import random
 import subprocess
+import traceback
 
 # This function will return the full path to all .mp3s in the directory
 def get_filepaths(directory):
@@ -20,22 +22,24 @@ def get_filepaths(directory):
     return file_paths
 
 try:
-    print "Target dir: ", sys.argv[1]
-    try:
-        filepaths = get_filepaths(sys.argv[1])
-        if(len(filepaths) > 0):
-            print "Found", len(filepaths), "files"
-            file = random.choice(filepaths)
-            print "Playing file", filepaths.index(file)
-            print file
-            command = "omxplayer -o local " + file
-            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-        else:
-            print "No .mp3 files found"
+    t = 10
+    loop = 1
+    while loop:
+        print "Target dir: ", sys.argv[1]
+        try:
+            filepaths = get_filepaths(sys.argv[1])
+            if(len(filepaths) > 0):
+                print "Found", len(filepaths), "files"
+                file = random.choice(filepaths)
+                print "Playing file", filepaths.index(file)
+                print file
+                command = "omxplayer -o local " + file
+                process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+            else:
+                print "No .mp3 files found"
+            time.sleep(t)
+        except:
+            traceback.print_exc()
 
-    except:
-        e = sys.exc_info()[0]
-        print "Exception: "
-        print e
 except:
     print "Please provide a path to target .mp3 files"
