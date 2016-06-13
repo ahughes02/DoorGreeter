@@ -1,4 +1,4 @@
-# Last Updated: 2016-06-11 by Austin Hughes
+# Last Updated: 2016-06-13 by Austin Hughes
 import os
 import sys
 import time
@@ -18,28 +18,73 @@ def get_filepaths(directory):
             # Only save mp3 files
             if filepath.endswith(".mp3"): 
                 file_paths.append(filepath)  # Add it to the list.
-
     return file_paths
 
 try:
-    t = 10
-    loop = 1
-    while loop:
-        print "Target dir: ", sys.argv[1]
-        try:
-            filepaths = get_filepaths(sys.argv[1])
-            if(len(filepaths) > 0):
-                print "Found", len(filepaths), "files"
-                file = random.choice(filepaths)
-                print "Playing file", filepaths.index(file)
-                print file
-                command = "omxplayer -o local " + file
-                process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-            else:
-                print "No .mp3 files found"
-            time.sleep(t)
-        except:
-            traceback.print_exc()
+    # We need this to access GPIO pins
+    import RPi.GPIO as GPIO
+    try:
+        t = 21 # time to sleep
+        loop = 1 # controls loop in future could set to 0 to break out of loop
+        stillOpen = 0 # Don't keep playing if the door is still open
 
-except:
-    print "Please provide a path to target .mp3 files"
+        # Always be looping
+        while loop:
+            # Set up GPIO mode
+            GPIO.setmode(GPIO.BOARD)
+            # Setup the input
+            GPIO.setup(7, GPIO.IN, pull_up_down = GPIO.PUD_UP) 
+
+            # get the input
+            input = GPIO.input(7) 
+
+            # Check if the door has been closed
+            if stillOpen == 1 and input == 0:
+                stillOpen = 0
+            # If it hasn't, don't play a sound
+            elif stillOpen == 1 and input == 1:
+                input = 0
+
+            # If the door is open play a sound
+            if input == 1:
+                # Log what we are doing
+                print "Target dir: ", sys.argv[1]
+                try:
+                    # Get the files
+                    filepaths = get_filepaths(sys.argv[1])
+                    # If we found files on the path
+                    if(len(filepaths) > 0):
+                        # Log
+                        print "Found", len(filepaths), "files"
+                        # Pick a file
+                        file = random.choice(filepaths)
+                        # Log
+                        print "Playing file", filepaths.index(file)
+                        print file
+                        # Generate the command to play audio, change local to HDMI to play over HDMI
+                        command = "omxplayer -o local " + file
+                        # Run it
+                        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+                        # Reset the GPIO Pins
+                        GPIO.cleanup()
+                        # Sleep for t seconds
+                        time.sleep(t)
+                        # Set still open to true
+                        stillOpen = 1
+                    # Otherwise we don't have files, log it
+                    else:
+                        print "No .mp3 files found"
+                # Log the exception
+                except:
+                    traceback.print_exc()
+            # Reset the GPIO pins        
+            GPIO.cleanup()
+            # Sleep for a bit
+            time.sleep(.25)
+    # Log that we didn't get an argument
+    except:
+        print "Please provide a path to target .mp3 files"
+# Log exceptions
+except RuntimeError:
+    print("Error importing RPi.GPIO!")
+    traceback.print_exc()
