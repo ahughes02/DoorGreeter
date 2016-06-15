@@ -1,4 +1,12 @@
-# Last Updated: 2016-06-13 by Austin Hughes
+# Last Updated: 2016-06-15 by Austin Hughes
+# Designed for Raspberry Pi 2 running Raspbian
+#################################################
+#                DoorGreeter.py                 #
+#################################################
+# Uses a connected sensor to play sounds when a door is opened. 
+# Expects input = 1 door is open, 0 door is closed.
+# Expects sensor input to be on pin 7.
+
 import os
 import sys
 import time
@@ -34,9 +42,10 @@ try:
             GPIO.setmode(GPIO.BOARD)
             # Setup the input
             GPIO.setup(7, GPIO.IN, pull_up_down = GPIO.PUD_UP) 
-
             # get the input
-            input = GPIO.input(7) 
+            input = GPIO.input(7)
+            # Reset the GPIO Pins
+            GPIO.cleanup()
 
             # Check if the door has been closed
             if stillOpen == 1 and input == 0:
@@ -65,8 +74,6 @@ try:
                         command = "omxplayer -o local " + file
                         # Run it
                         process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-                        # Reset the GPIO Pins
-                        GPIO.cleanup()
                         # Sleep for t seconds
                         time.sleep(t)
                         # Set still open to true
@@ -77,8 +84,6 @@ try:
                 # Log the exception
                 except:
                     traceback.print_exc()
-            # Reset the GPIO pins        
-            GPIO.cleanup()
             # Sleep for a bit
             time.sleep(.25)
     # Log that we didn't get an argument
